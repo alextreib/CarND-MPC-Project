@@ -5,9 +5,10 @@
 
 using CppAD::AD;
 
-// TODO: Set the timestep length and duration
-size_t N = 0;
-double dt = 0;
+// timestep length is 0.1 s with 7 steps in total
+// Prediction horizon T is therefore 0.7 s 
+size_t N = 7;
+double dt = 0.1;
 
 // This value assumes the model presented in the classroom is used.
 //
@@ -19,6 +20,8 @@ double dt = 0;
 // presented in the classroom matched the previous radius.
 //
 // This is the length from front to CoG that has a similar radius.
+
+// Already tuned by given project -> no tuning anymore
 const double Lf = 2.67;
 
 class FG_eval {
