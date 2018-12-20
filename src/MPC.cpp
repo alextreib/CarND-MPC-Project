@@ -7,7 +7,7 @@ using CppAD::AD;
 
 // timestep length is 0.1 s with 7 steps in total
 // Prediction horizon T is therefore 0.7 s
-size_t N = 7;
+size_t N = 10;
 double dt = 0.1;
 
 // This value assumes the model presented in the classroom is used.
@@ -25,7 +25,7 @@ double dt = 0.1;
 const double Lf = 2.67;
 
 // Reference velocity (as explained in the lessons)
-double ref_v = 65;
+double ref_v = 30;
 
 // initial state is given here (because both classes needs them)
 size_t x_start = 0;
@@ -65,11 +65,11 @@ public:
     // Weights (penalty parameters)
     const int cte_weight = 1500;
     const int epsi_weight = 1500;
-    const int v_weight = 1500;
-    const int delta_weight = 1500;
-    const int a_weight = 1500;
-    const int delta_diff_weight = 100;
-    const int a_diff_weight = 10;
+    const int v_weight = 1;
+    const int delta_weight = 5;
+    const int a_weight = 5;
+    const int delta_diff_weight = 20;
+    const int a_diff_weight = 5;
 
     // The part of the cost based on the reference state.
     for (int t = 0; t < N; t++)
@@ -125,8 +125,8 @@ public:
       AD<double> delta0 = vars[delta_start + t - 1];
       AD<double> a0 = vars[a_start + t - 1];
 
-      AD<double> f0 = coeffs[0] + coeffs[1] * x0;
-      AD<double> psides0 = CppAD::atan(coeffs[1]);
+       AD<double> f0 = coeffs[0] + coeffs[1] * x0 + coeffs[2] * CppAD::pow(x0, 2) + coeffs[3] * CppAD::pow(x0, 3);
+      AD<double> psides0 = CppAD::atan(coeffs[1] + 2 * coeffs[2] * x0 + 3 * coeffs[3] * CppAD::pow(x0, 2));
 
       // Here's `x` to get you started.
       // The idea here is to constraint this value to be 0.
