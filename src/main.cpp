@@ -106,19 +106,39 @@ int main()
           double psi = j[1]["psi"];
           double v = j[1]["speed"];
 
-          /*
-          * TODO: Calculate steering angle and throttle using MPC.
-          *
-          * Both are in between [-1, 1].
-          *
-          */
+          //*******************************************//
+          //  Calculate throttle and steering angle    //
+          //*******************************************//
+
+          Eigen::VectorXd waypoints_x(ptsx.size());
+          Eigen::VectorXd waypoints_y(ptsy.size());
+
+          // Transform waypoints into car's perspective
+          for (int i = 0; i < ptsx.size(); i++)
+          {
+            double dx = ptsx[i] - px;
+            double dy = ptsy[i] - py;
+            waypoints_x[i].push_back(dx * cos(-psi) - dy * sin(-psi));
+            waypoints_y[i].push_back(dx * sin(-psi) + dy * cos(-psi));
+          }
 
           //*******************************************//
           //  Fitting a polynomial to the waypoints    //
           //*******************************************//
-          //
-          double steer_value;
-          double throttle_value;
+
+          // Steps are dervied from the mpc_to_line quiz from the lecture
+          auto coeffs = polyfit(waypoints_x, waypoints_y, 3);
+          // @todo: is polyeval(coeffs, x) - y; better?
+          double cte = polyeval(coeffs, 0);
+          // @todo: document steps  psi - atan(coeffs[1])
+          double epsi = -atan(coeffs[1]);
+
+          // Using the solver to predict new states
+          Eigen::VectorXd state(6);
+          state << 0, 0, 0, v, cte, epsi;
+          auto vars = mpc.Solve(state, coeffs);
+          double steer_value = vars[0];
+          double throttle_value = vars[1];
 
           json msgJson;
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
