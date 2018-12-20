@@ -119,10 +119,9 @@ int main()
           {
             double dx = ptsx[i] - px;
             double dy = ptsy[i] - py;
-            waypoints_x[i]=dx * cos(-psi) - dy * sin(-psi);
-            waypoints_y[i]=dx * sin(-psi) + dy * cos(-psi);
+            waypoints_x[i] = dx * cos(-psi) - dy * sin(-psi);
+            waypoints_y[i] = dx * sin(-psi) + dy * cos(-psi);
           }
-
 
           //*******************************************//
           //  Fitting a polynomial to the waypoints    //
@@ -138,16 +137,14 @@ int main()
           // Using the solver to predict new states
           Eigen::VectorXd state(6);
           state << 0, 0, 0, v, cte, epsi;
+          // ActuatorValues [steering_angle (deg), throttle]
           auto ActuatorValues = mpc.Solve(state, coeffs);
-          double steer_value = ActuatorValues[0];
-          double throttle_value = ActuatorValues[1];
 
           json msgJson;
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
           // Otherwise the values will be in between [-deg2rad(25), deg2rad(25] instead of [-1, 1].
-          const double Lf = 2.67;
-          msgJson["steering_angle"] = steer_value / (deg2rad(25));
-          msgJson["throttle"] = 0.01;
+          msgJson["steering_angle"] = ActuatorValues[0] / (deg2rad(25));
+          msgJson["throttle"] = ActuatorValues[1];
 
           //*******************************************//
           //  Displaying values/calculated values    //
@@ -180,17 +177,19 @@ int main()
 
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Yellow line
-          for (int i = 0; i < 100;i+=3)
+          for (int i = 0; i < ptsx.size(); i++)
           {
-            next_x_vals.push_back(i);
-            next_y_vals.push_back(polyeval(coeffs,i));
+            if (i % 2 == 0)
+            {
+              next_x_vals.push_back(i);
+              next_y_vals.push_back(polyeval(coeffs, i));
+            }
           }
-
           msgJson["next_x"] = next_x_vals;
           msgJson["next_y"] = next_y_vals;
-		
+
           auto msg = "42[\"steer\"," + msgJson.dump() + "]";
-          //std::cout << msg << std::endl;
+          std::cout << msg << std::endl;
           // Latency
           // The purpose is to mimic real driving conditions where
           // the car does actuate the commands instantly.
@@ -200,7 +199,7 @@ int main()
           //
           // NOTE: REMEMBER TO SET THIS TO 100 MILLISECONDS BEFORE
           // SUBMITTING.
-          this_thread::sleep_for(chrono::milliseconds(0));
+          this_thread::sleep_for(chrono::milliseconds(100));
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
         }
       }
