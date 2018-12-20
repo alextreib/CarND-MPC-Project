@@ -136,15 +136,19 @@ int main()
           // Using the solver to predict new states
           Eigen::VectorXd state(6);
           state << 0, 0, 0, v, cte, epsi;
-          auto vars = mpc.Solve(state, coeffs);
-          double steer_value = vars[0];
-          double throttle_value = vars[1];
+          auto ActuatorValues = mpc.Solve(state, coeffs);
+          double steer_value = ActuatorValues[0];
+          double throttle_value = ActuatorValues[1];
 
           json msgJson;
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
           // Otherwise the values will be in between [-deg2rad(25), deg2rad(25] instead of [-1, 1].
-          msgJson["steering_angle"] = steer_value;
+          msgJson["steering_angle"] = steer_value / (deg2rad(25));
           msgJson["throttle"] = throttle_value;
+
+          //*******************************************//
+          //  Displaying values/calculated values    //
+          //*******************************************//
 
           //Display the MPC predicted trajectory
           vector<double> mpc_x_vals;
@@ -152,6 +156,17 @@ int main()
 
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Green line
+          for (int i = 2; i < ActuatorValues.size(); i++)
+          {
+            if (i % 2 == 0)
+            {
+              mpc_x_vals.push_back(ActuatorValues[i]);
+            }
+            else
+            {
+              mpc_y_vals.push_back(ActuatorValues[i]);
+            }
+          }
 
           msgJson["mpc_x"] = mpc_x_vals;
           msgJson["mpc_y"] = mpc_y_vals;
@@ -162,6 +177,11 @@ int main()
 
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Yellow line
+          for (int i = 0; i < ptsx_vehicle.size(); i++)
+          {
+            next_x_vals.push_back(ptsx_vehicle[i]);
+            next_y_vals.push_back(ptsy_vehicle[i]);
+          }
 
           msgJson["next_x"] = next_x_vals;
           msgJson["next_y"] = next_y_vals;
