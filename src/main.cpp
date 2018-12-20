@@ -11,6 +11,7 @@
 
 // for convenience
 using json = nlohmann::json;
+using namespace std;
 
 // For converting back and forth between radians and degrees.
 constexpr double pi() { return M_PI; }
@@ -118,8 +119,8 @@ int main()
           {
             double dx = ptsx[i] - px;
             double dy = ptsy[i] - py;
-            waypoints_x[i].push_back(dx * cos(-psi) - dy * sin(-psi));
-            waypoints_y[i].push_back(dx * sin(-psi) + dy * cos(-psi));
+            waypoints_x[i]=dx * cos(-psi) - dy * sin(-psi);
+            waypoints_y[i]=dx * sin(-psi) + dy * cos(-psi);
           }
 
           //*******************************************//
@@ -177,10 +178,10 @@ int main()
 
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Yellow line
-          for (int i = 0; i < ptsx_vehicle.size(); i++)
+          for (int i = 0; i < ptsx.size(); i++)
           {
-            next_x_vals.push_back(ptsx_vehicle[i]);
-            next_y_vals.push_back(ptsy_vehicle[i]);
+            next_x_vals.push_back(ptsx[i]);
+            next_y_vals.push_back(ptsy[i]);
           }
 
           msgJson["next_x"] = next_x_vals;
