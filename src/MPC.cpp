@@ -7,8 +7,9 @@ using CppAD::AD;
 
 // timestep length is 0.1 s with 7 steps in total
 // Prediction horizon T is therefore 0.7 s
-size_t N = 10;
-double dt = 0.1;
+// For higher ref_v is makes sense to extend the prediction horizon
+const int N = 12; // Extending the prediction horizon works very well -> even the S-curves are detected as such 
+const double dt = 0.15; // Longer time lengths reduces oszillation and let the vehicle drive smoother
 
 // This value assumes the model presented in the classroom is used.
 //
@@ -28,14 +29,14 @@ const double Lf = 2.67;
 double ref_v = 50;
 
 // initial state is given here (because both classes needs them)
-size_t x_start = 0;
-size_t y_start = x_start + N;
-size_t psi_start = y_start + N;
-size_t v_start = psi_start + N;
-size_t cte_start = v_start + N;
-size_t epsi_start = cte_start + N;
-size_t delta_start = epsi_start + N;
-size_t a_start = delta_start + N - 1;
+const int x_start = 0;
+const int y_start = x_start + N;
+const int psi_start = y_start + N;
+const int v_start = psi_start + N;
+const int cte_start = v_start + N;
+const int epsi_start = cte_start + N;
+const int delta_start = epsi_start + N;
+const int a_start = delta_start + N - 1;
 
 class FG_eval
 {
@@ -161,7 +162,6 @@ MPC::~MPC() {}
 vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs)
 {
   bool ok = true;
-  size_t i;
   typedef CPPAD_TESTVECTOR(double) Dvector;
 
   // Deriving the values from the state
@@ -177,27 +177,16 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs)
   // element vector and there are 10 timesteps. The number of variables is:
   //
   // n_vars= N * state vector size + (N-1) * 2 actuactors (steering & acceleration)
-  // @todo: resolve state vector from state
-  size_t n_vars = N * 6 + (N - 1) * 2;
-  size_t n_constraints = N * 6;
+  const int n_vars = N * state.size() + (N - 1) * 2;
+  const int n_constraints = N * state.size();
 
   // Initial value of the independent variables.
   // SHOULD BE 0 besides initial state.
   Dvector vars(n_vars);
-  for (int i = 0; i < n_vars; i++)
-  {
-    vars[i] = 0;
-  }
+  for (int i=0;i<n_vars;i++)
+   vars[i]=0; 
 
-  // Setting the initial values to other than 0. Idea taken from solution repo:
-  // https://github.com/udacity/CarND-MPC-Quizzes
-  vars[x_start] = x;
-  vars[y_start] = y;
-  vars[psi_start] = psi;
-  vars[v_start] = v;
-  vars[cte_start] = cte;
-  vars[epsi_start] = epsi;
-
+  std::cout<<vars<<std::endl;
   //*****************************************//
   // Setting lower and upper limits for vars //
   //*****************************************//
@@ -226,10 +215,11 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs)
 
   // Acceleration/decceleration upper and lower limits.
   // NOTE: Feel free to change this to something else.
+  // Upper accleration modified -> not so much acceleration needed here
   for (int i = a_start; i < n_vars; i++)
   {
     vars_lowerbound[i] = -1.0;
-    vars_upperbound[i] = 1.0;
+    vars_upperbound[i] = 0.7;
   }
 
   //************************************************//
@@ -300,11 +290,13 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs)
   // Return first actuactor values
   vector<double> resultvector;
 
+  // steering_angle and acceleration
   resultvector.push_back(solution.x[delta_start]);
   resultvector.push_back(solution.x[a_start]);
 
   for (int i = 0; i < N - 1; i++)
   {
+    // x and y values
     resultvector.push_back(solution.x[x_start + i + 1]);
     resultvector.push_back(solution.x[y_start + i + 1]);
   }
