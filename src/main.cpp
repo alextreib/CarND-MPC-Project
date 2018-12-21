@@ -116,12 +116,14 @@ int main()
           //*******************************************//
           //              Handle latency               //
           //*******************************************//
-          Eigen::VectorXd old_state(6);
-          old_state << px, py, psi, v;
-
-          // Overriding state with the new state with latency taken into account
-          px, py, psi, v = mpc.StateWithLatency(old_state, steering_angle, throttle);
-
+			std::vector<double> old_state={px,py,psi,v};
+          // New state contains old values with latency taken into account
+          std::vector<double> new_state =mpc.StateWithLatency(old_state, steering_angle, throttle);
+          px=new_state[0];
+          py=new_state[1];
+          psi=new_state[2];
+          v=new_state[3];
+			
           //*******************************************//
           //  Calculate throttle and steering angle    //
           //*******************************************//
@@ -188,7 +190,7 @@ int main()
 
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Yellow line
-          for (int i = 0; i < 40; i += 2)
+          for (int i = 0; i < 60; i += 2)
           {
             // Get only each 2nd value because not too much values are not required (due to polyeval function)
             next_x_vals.push_back(i);
