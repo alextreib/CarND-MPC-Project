@@ -49,6 +49,7 @@ public:
     //****************************//
     //       Cost function        //
     //****************************//
+
     // Weights (penalty parameters)
     const int cte_weight = 1650;
     const int epsi_weight = 1850;
@@ -83,6 +84,7 @@ public:
     //****************************************//
     //     Initialization & constraints       //
     //****************************************//
+
     fg[1 + x_start] = vars[x_start];
     fg[1 + y_start] = vars[y_start];
     fg[1 + psi_start] = vars[psi_start];
@@ -221,7 +223,7 @@ vector<double> MPC::Solve(Eigen::VectorXd old_state, Eigen::VectorXd coeffs)
     constraints_upperbound[i] = 0;
   }
 
-  // Setting the initial values to other than 0. Idea taken from solution repo:
+  // Setting lowerbound constraints. Idea taken from solution repo:
   // https://github.com/udacity/CarND-MPC-Quizzes
   constraints_lowerbound[x_start] = x;
   constraints_lowerbound[y_start] = y;

@@ -122,7 +122,7 @@ A well written README file can enhance your project and portfolio and develop yo
 Writeup
 ---
 
-**Vehicle Detection Project**
+**MPC Project**
 
 ---
 
@@ -163,7 +163,8 @@ This means the total prediction time is split into the number of waypoints N wit
 The combination of N and dt is crucial for the performance of the algorithm. Is N too high, the vehicle reacts too late and takes sharp turns. Is N too low, the prediction horizon is not sufficient and the car can easily miss the lane.
 dt determines the time step length between the waypoints. Is it too large, the vehicle cannot stir in the right direction before ending up in the wrong place. Is it too small, the calculation time is longer than the time step length.
 
-Moreover, the combination has also an effect: 
+Moreover, the combination has also an effect:
+ 
 * N * dt too large, the calculation needs too long. 
 * N * dt too small, the prediction time is not sufficient and vehicle starts oscillating.
 

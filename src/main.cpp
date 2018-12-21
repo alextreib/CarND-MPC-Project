@@ -116,6 +116,8 @@ int main()
           //*******************************************//
           //              Handle latency               //
           //*******************************************//
+
+          // Using old state for extension with delay
           std::vector<double> old_state = {px, py, psi, v};
           // New state contains old values with latency taken into account
           std::vector<double> new_state = mpc.StateWithLatency(old_state, steering_angle, throttle);
@@ -128,10 +130,11 @@ int main()
           //  Calculate throttle and steering angle    //
           //*******************************************//
 
+          // Waypoints in vehicle's perspective
           Eigen::VectorXd waypoints_x(ptsx.size());
           Eigen::VectorXd waypoints_y(ptsy.size());
 
-          // Transform waypoints into car's perspective
+          // Transform waypoints into vehicle's perspective
           for (int i = 0; i < (int)ptsx.size(); i++)
           {
             double dx = ptsx[i] - px;
