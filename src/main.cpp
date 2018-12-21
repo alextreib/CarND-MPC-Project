@@ -143,7 +143,8 @@ int main()
           json msgJson;
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
           // Otherwise the values will be in between [-deg2rad(25), deg2rad(25] instead of [-1, 1].
-          msgJson["steering_angle"] = ActuatorValues[0] / (deg2rad(25));
+          const double Lf = 2.67;
+          msgJson["steering_angle"] = ActuatorValues[0]/(deg2rad(25)*Lf);
           msgJson["throttle"] = ActuatorValues[1];
 
           //*******************************************//
@@ -160,24 +161,26 @@ int main()
           {
             if (i % 2 == 0)
             {
+              // Steering
               mpc_x_vals.push_back(ActuatorValues[i]);
             }
             else
             {
+              // Throttle
               mpc_y_vals.push_back(ActuatorValues[i]);
             }
           }
 
           msgJson["mpc_x"] = mpc_x_vals;
           msgJson["mpc_y"] = mpc_y_vals;
-
+          
           //Display the waypoints/reference line
           vector<double> next_x_vals;
           vector<double> next_y_vals;
 
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Yellow line
-          for (int i = 0; i < ptsx.size(); i++)
+          for (int i = 0; i < 30; i++)
           {
             if (i % 2 == 0)
             {

@@ -24,7 +24,7 @@ double dt = 0.1;
 // Already tuned by given project -> no tuning anymore
 const double Lf = 2.67;
 
-// Reference velocity (as explained in the lessons)
+// Reference velocity (as explained in the lessons) -> algorithm works only with velocities that aren't too large (<70) 
 double ref_v = 50;
 
 // initial state is given here (because both classes needs them)
@@ -63,13 +63,13 @@ public:
     //       Cost function        //
     //****************************//
     // Weights (penalty parameters)
-    const int cte_weight = 1500;
-    const int epsi_weight = 1500;
+    const int cte_weight = 1650;
+    const int epsi_weight = 1850;
     const int v_weight = 1;
-    const int delta_weight = 5;
-    const int a_weight = 5;
+    const int delta_weight = 7;
+    const int a_weight = 12;
     const int delta_diff_weight = 20;
-    const int a_diff_weight = 5;
+    const int a_diff_weight = 25;
 
     // The part of the cost based on the reference state.
     for (int t = 0; t < N; t++)
@@ -125,8 +125,10 @@ public:
       AD<double> delta0 = vars[delta_start + t - 1];
       AD<double> a0 = vars[a_start + t - 1];
 
-     AD<double> f0 = coeffs[0] + coeffs[1] * x0;
-      AD<double> psides0 = CppAD::atan(coeffs[1]);
+      // In the github solution of the quiz are the calculation just for one dimension given, here more dimensions are needed
+      // Idea taken from https://github.com/darienmt/CarND-MPC-Project-P5
+     AD<double> f0 = coeffs[0] + coeffs[1] * x0 + coeffs[2] * pow(x0, 2) + coeffs[3] * pow(x0, 3);
+      AD<double> psides0 = CppAD::atan(coeffs[1] + 2*coeffs[2]*x0 + 3*coeffs[3]*pow(x0,2));
       
       // Here's `x` to get you started.
       // The idea here is to constraint this value to be 0.
@@ -293,7 +295,7 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs)
 
   // Cost
   auto cost = solution.obj_value;
-  std::cout << "Cost " << cost << std::endl;
+  std::cout << "\nCost: " << cost << std::endl;
 
   // Return first actuactor values
   vector<double> resultvector;
