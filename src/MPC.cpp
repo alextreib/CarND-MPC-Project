@@ -291,17 +291,17 @@ vector<double> MPC::Solve(Eigen::VectorXd old_state, Eigen::VectorXd coeffs)
 }
 
 // Calculate the old_state with the latency taken into account
-// Calulations are based on kinematic equations (
+// Calulations are based on kinematic equations (based on previous lessons and wikipedia https://en.wikipedia.org/wiki/Equations_of_motion#Kinematic_quantities)
 // Prerequisite: Assuming no change in derivate(steering_angle and throttle) is 0 during delay time
 std::vector<double> MPC::StateWithLatency(std::vector<double> old_state, double steering_angle, double throttle)
 {
-  // Get the old state
+  // Get the old state (as parameter)
   double px = old_state[0];
   double py = old_state[1];
   double psi = old_state[2];
   double v = old_state[3];
 
-  // Equations taken from previous lessons
+  // Equations for kinematic modelling
   double latency_s = latency_ms / 1000;
   double px_pred = px + (latency_s * v * cos(psi));
   double py_pred = py + (latency_s * v * sin(psi));

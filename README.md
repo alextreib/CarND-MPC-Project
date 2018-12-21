@@ -114,3 +114,78 @@ still be compilable with cmake and make./
 
 ## How to write a README
 A well written README file can enhance your project and portfolio and develop your abilities to create professional README files by completing [this free course](https://www.udacity.com/course/writing-readmes--ud777).
+
+
+
+---
+
+Writeup
+---
+
+**Vehicle Detection Project**
+
+---
+
+# Compilation
+
+Compilation works without errors and warnings like usual:
+
+* cmake ..
+* cmake --build .
+* ./mpc
+
+# Implementation
+
+## The Model
+
+The kinematic model consists of a the vehicle position (in x and y coordinates, orientation angle psi). Moreover, is a CTE (cross-track error) as well as a psi error (epsi) calculated to reduce keep the car on track while reducing these to zero.
+For this, a certain acceleration and steering angle are required as output from calculations based on the previous measurements.
+
+The model basically contains the following elements:
+
+* ptsx (x position of waypoints)
+* ptsy (y position of waypoints)
+* px (current x position of the vehicle)
+* py (current y position of the vehicle)
+* psi (orientation of the vehicle)
+* v (velocity of the vehicle)
+* delta (steering angle)
+* a (throttle)
+
+## Timestep Length and Elapsed Duration (N & dt)
+
+Based on the reference trajectory from the polynomial fit of waypoints, the MPC algorithm calculates the waypoints as predictions for a defined prediction horizon T.
+
+T = N * dt
+
+This means the total prediction time is split into the number of waypoints N with the equal distance of dt.
+
+The combination of N and dt is crucial for the performance of the algorithm. Is N too high, the vehicle reacts too late and takes sharp turns. Is N too low, the prediction horizon is not sufficient and the car can easily miss the lane.
+dt determines the time step length between the waypoints. Is it too large, the vehicle cannot stir in the right direction before ending up in the wrong place. Is it too small, the calculation time is longer than the time step length.
+
+Moreover, the combination has also an effect: 
+* N * dt too large, the calculation needs too long. 
+* N * dt too small, the prediction time is not sufficient and vehicle starts oscillating.
+
+The chosen values N = 12 and dt = 0.15 seems to be the perfect tradeoff for the reference velocity as well as for this use case.
+
+## Polynomial Fitting and MPC Preprocessing
+
+First, the global coordinates of the simulator needs to be transformed into vehicle coordinates. This is done in the MPC.cpp in the function Glob2CarX and Glob2CarY with a 2D vector transformation equation.
+
+With this done, a thrird-degree polyfit algorithm can be used to fit the transformed waypoints into a discrete curve.
+Due to the fact that all these calculations are done in the vehicle's perspective, the component px, py and psi can be set to zero because the vehicle is in the center of the coordination system.  
+With the provided polyeval function the CTE can be calculated, so that the error from the reference trajectory can be counted.
+Furthermore, the psi error (epsi) is calculated from the derivative of polynomial fit. It is the negative arctan of the 2. coefficient of the polyfit.
+
+## Model Predictive Control with Latency
+
+The model performs pretty good for low velocities without taking the latency into account. But with higher velocities the vehicle behaviour results in an undeterminstic one. 
+
+To implement a solution for this problem, a function "StateWithLatency" is added that takes the old state of the vehicle and assumes constant velocity and steering angle to calculate the new state after the given latency (100 ms) later with a usual kinematic approach.
+
+With this new state, the new steering angle and throttle is calculated and the latency problem is solved.
+
+# Simulation
+
+The car doesn't leave the road. The result is very satisfying because it drives so accurate in the lane and almost everytime stays in the middle of the lane.
