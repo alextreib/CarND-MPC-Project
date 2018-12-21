@@ -305,7 +305,7 @@ std::vector<double> MPC::StateWithLatency(std::vector<double> old_state, double 
   double latency_s = latency_ms / 1000;
   double px_pred = px + (latency_s * v * cos(psi));
   double py_pred = py + (latency_s * v * sin(psi));
-  double psi_pred = psi - (latency_s * v * steering_angle * / Lf);
+  double psi_pred = psi - ((latency_s * v * steering_angle) / Lf);
   double v_pred = v + latency_s * throttle;
 
   return {px_pred, py_pred, psi_pred, v_pred};
