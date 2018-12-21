@@ -17,6 +17,11 @@ using namespace std;
 constexpr double pi() { return M_PI; }
 double deg2rad(double x) { return x * pi() / 180; }
 double rad2deg(double x) { return x * 180 / pi(); }
+// GlobalToCar coordinate transformation
+// IsX -> True for X, False for Y calculation
+double Glob2CarX(double dx, double dy, double psi) {return dx * cos(-psi) - dy * sin(-psi);}
+double Glob2CarY(double dx, double dy, double psi) {return dx * sin(-psi) + dy * cos(-psi);}
+
 
 // Checks if the SocketIO event has JSON data.
 // If there is data the JSON object in string format will be returned,
@@ -115,23 +120,21 @@ int main()
           Eigen::VectorXd waypoints_y(ptsy.size());
 
           // Transform waypoints into car's perspective
-          for (int i = 0; i < ptsx.size(); i++)
+          for (int i = 0; i < (int)ptsx.size(); i++)
           {
             double dx = ptsx[i] - px;
             double dy = ptsy[i] - py;
-            waypoints_x[i] = dx * cos(-psi) - dy * sin(-psi);
-            waypoints_y[i] = dx * sin(-psi) + dy * cos(-psi);
+            waypoints_x[i] = Glob2CarX(dx, dy, psi);
+            waypoints_y[i] = Glob2CarY(dx,dy,psi);
           }
 
           //*******************************************//
           //  Fitting a polynomial to the waypoints    //
           //*******************************************//
 
-          // Steps are dervied from the mpc_to_line quiz from the lecture
+          // Steps are derived from the mpc_to_line quiz from the lecture
           auto coeffs = polyfit(waypoints_x, waypoints_y, 3);
-          // @todo: is polyeval(coeffs, x) - y; better?
           double cte = polyeval(coeffs, 0);
-          // @todo: document steps  psi - atan(coeffs[1])
           double epsi = -atan(coeffs[1]);
 
           // Using the solver to predict new states
@@ -143,8 +146,9 @@ int main()
           json msgJson;
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
           // Otherwise the values will be in between [-deg2rad(25), deg2rad(25] instead of [-1, 1].
-          const double Lf = 2.67;
-          msgJson["steering_angle"] = ActuatorValues[0]/(deg2rad(25)*Lf);
+          // Annotation: Due to the cost, the deg2rad calculation has no effect to the performance. 
+          // Therefore, the ActuactorValues are declared here unitless and are just used as a factor to steer (x/y) the vehicle. 
+          msgJson["steering_angle"] = ActuatorValues[0];
           msgJson["throttle"] = ActuatorValues[1];
 
           //*******************************************//
@@ -157,18 +161,12 @@ int main()
 
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Green line
-          for (int i = 2; i < ActuatorValues.size(); i++)
+          for (int i = 2; i < (int)ActuatorValues.size(); i++)
           {
-            if (i % 2 == 0)
-            {
-              // Steering
+            if (i % 2 == 0) // Steering
               mpc_x_vals.push_back(ActuatorValues[i]);
-            }
-            else
-            {
-              // Throttle
+            else // Throttle
               mpc_y_vals.push_back(ActuatorValues[i]);
-            }
           }
 
           msgJson["mpc_x"] = mpc_x_vals;
@@ -180,13 +178,11 @@ int main()
 
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Yellow line
-          for (int i = 0; i < 30; i++)
+          for (int i = 0; i < 40; i+=2)
           {
-            if (i % 2 == 0)
-            {
+            // Get only each 2nd value because not too much values are not required (due to polyeval function) 
               next_x_vals.push_back(i);
               next_y_vals.push_back(polyeval(coeffs, i));
-            }
           }
           msgJson["next_x"] = next_x_vals;
           msgJson["next_y"] = next_y_vals;
