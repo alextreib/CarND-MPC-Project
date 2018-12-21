@@ -19,9 +19,8 @@ double deg2rad(double x) { return x * pi() / 180; }
 double rad2deg(double x) { return x * 180 / pi(); }
 // GlobalToCar coordinate transformation
 // IsX -> True for X, False for Y calculation
-double Glob2CarX(double dx, double dy, double psi) {return dx * cos(-psi) - dy * sin(-psi);}
-double Glob2CarY(double dx, double dy, double psi) {return dx * sin(-psi) + dy * cos(-psi);}
-
+double Glob2CarX(double dx, double dy, double psi) { return dx * cos(-psi) - dy * sin(-psi); }
+double Glob2CarY(double dx, double dy, double psi) { return dx * sin(-psi) + dy * cos(-psi); }
 
 // Checks if the SocketIO event has JSON data.
 // If there is data the JSON object in string format will be returned,
@@ -111,6 +110,17 @@ int main()
           double py = j[1]["y"];
           double psi = j[1]["psi"];
           double v = j[1]["speed"];
+          double steering_angle = j[1]["steering_angle"];
+          double throttle = j[1]["throttle"];
+
+          //*******************************************//
+          //              Handle latency               //
+          //*******************************************//
+          Eigen::VectorXd old_state(6);
+          old_state << px, py, psi, v;
+
+          // Overriding state with the new state with latency taken into account
+          px, py, psi, v = mpc.StateWithLatency(old_state, steering_angle, throttle);
 
           //*******************************************//
           //  Calculate throttle and steering angle    //
@@ -125,7 +135,7 @@ int main()
             double dx = ptsx[i] - px;
             double dy = ptsy[i] - py;
             waypoints_x[i] = Glob2CarX(dx, dy, psi);
-            waypoints_y[i] = Glob2CarY(dx,dy,psi);
+            waypoints_y[i] = Glob2CarY(dx, dy, psi);
           }
 
           //*******************************************//
@@ -146,8 +156,8 @@ int main()
           json msgJson;
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
           // Otherwise the values will be in between [-deg2rad(25), deg2rad(25] instead of [-1, 1].
-          // Annotation: Due to the cost, the deg2rad calculation has no effect to the performance. 
-          // Therefore, the ActuactorValues are declared here unitless and are just used as a factor to steer (x/y) the vehicle. 
+          // Annotation: Due to the cost, the deg2rad calculation has no effect to the performance.
+          // Therefore, the ActuactorValues are declared here unitless and are just used as a factor to steer (x/y) the vehicle.
           msgJson["steering_angle"] = ActuatorValues[0];
           msgJson["throttle"] = ActuatorValues[1];
 
@@ -171,18 +181,18 @@ int main()
 
           msgJson["mpc_x"] = mpc_x_vals;
           msgJson["mpc_y"] = mpc_y_vals;
-          
+
           //Display the waypoints/reference line
           vector<double> next_x_vals;
           vector<double> next_y_vals;
 
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Yellow line
-          for (int i = 0; i < 40; i+=2)
+          for (int i = 0; i < 40; i += 2)
           {
-            // Get only each 2nd value because not too much values are not required (due to polyeval function) 
-              next_x_vals.push_back(i);
-              next_y_vals.push_back(polyeval(coeffs, i));
+            // Get only each 2nd value because not too much values are not required (due to polyeval function)
+            next_x_vals.push_back(i);
+            next_y_vals.push_back(polyeval(coeffs, i));
           }
           msgJson["next_x"] = next_x_vals;
           msgJson["next_y"] = next_y_vals;
@@ -198,7 +208,7 @@ int main()
           //
           // NOTE: REMEMBER TO SET THIS TO 100 MILLISECONDS BEFORE
           // SUBMITTING.
-          this_thread::sleep_for(chrono::milliseconds(100));
+          this_thread::sleep_for(chrono::milliseconds(latency_ms));
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
         }
       }

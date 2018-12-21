@@ -8,27 +8,13 @@ using CppAD::AD;
 // timestep length is 0.1 s with 7 steps in total
 // Prediction horizon T is therefore 0.7 s
 // For higher ref_v is makes sense to extend the prediction horizon
-const int N = 12; // Extending the prediction horizon works very well -> even the S-curves are detected as such 
+const int N = 12;       // Extending the prediction horizon works very well -> even the S-curves are detected as such
 const double dt = 0.15; // Longer time lengths reduces oszillation and let the vehicle drive smoother
 
-// This value assumes the model presented in the classroom is used.
-//
-// It was obtained by measuring the radius formed by running the vehicle in the
-// simulator around in a circle with a constant steering angle and velocity on a
-// flat terrain.
-//
-// Lf was tuned until the the radius formed by the simulating the model
-// presented in the classroom matched the previous radius.
-//
-// This is the length from front to CoG that has a similar radius.
-
-// Already tuned by given project -> no tuning anymore
-const double Lf = 2.67;
-
-// Reference velocity (as explained in the lessons) -> algorithm works only with velocities that aren't too large (<70) 
+// Reference velocity (as explained in the lessons) -> algorithm works only with velocities that aren't too large (<70)
 double ref_v = 50;
 
-// initial state is given here (because both classes needs them)
+// initial old_state is given here (because both classes needs them)
 const int x_start = 0;
 const int y_start = x_start + N;
 const int psi_start = y_start + N;
@@ -48,7 +34,7 @@ public:
   typedef CPPAD_TESTVECTOR(AD<double>) ADvector;
   void operator()(ADvector &fg, const ADvector &vars)
   {
-    // `fg` a vector of the cost constraints, `vars` is a vector of variable values (state & actuators)
+    // `fg` a vector of the cost constraints, `vars` is a vector of variable values (old_state & actuators)
     // NOTE: You'll probably go back and forth between this function and
     // the Solver function below.
 
@@ -72,7 +58,7 @@ public:
     const int delta_diff_weight = 20;
     const int a_diff_weight = 25;
 
-    // The part of the cost based on the reference state.
+    // The part of the cost based on the reference old_state.
     for (int t = 0; t < N; t++)
     {
       fg[0] += cte_weight * CppAD::pow(vars[cte_start + t], 2);
@@ -106,7 +92,7 @@ public:
 
     for (int t = 1; t < N; t++)
     {
-      // The state at time t+1 .
+      // The old_state at time t+1 .
       AD<double> x1 = vars[x_start + t];
       AD<double> y1 = vars[y_start + t];
       AD<double> psi1 = vars[psi_start + t];
@@ -114,7 +100,7 @@ public:
       AD<double> cte1 = vars[cte_start + t];
       AD<double> epsi1 = vars[epsi_start + t];
 
-      // The state at time t.
+      // The old_state at time t.
       AD<double> x0 = vars[x_start + t - 1];
       AD<double> y0 = vars[y_start + t - 1];
       AD<double> psi0 = vars[psi_start + t - 1];
@@ -128,9 +114,9 @@ public:
 
       // In the github solution of the quiz are the calculation just for one dimension given, here more dimensions are needed
       // Idea taken from https://github.com/darienmt/CarND-MPC-Project-P5
-     AD<double> f0 = coeffs[0] + coeffs[1] * x0 + coeffs[2] * pow(x0, 2) + coeffs[3] * pow(x0, 3);
-      AD<double> psides0 = CppAD::atan(coeffs[1] + 2*coeffs[2]*x0 + 3*coeffs[3]*pow(x0,2));
-      
+      AD<double> f0 = coeffs[0] + coeffs[1] * x0 + coeffs[2] * pow(x0, 2) + coeffs[3] * pow(x0, 3);
+      AD<double> psides0 = CppAD::atan(coeffs[1] + 2 * coeffs[2] * x0 + 3 * coeffs[3] * pow(x0, 2));
+
       // Here's `x` to get you started.
       // The idea here is to constraint this value to be 0.
       //
@@ -159,34 +145,34 @@ public:
 MPC::MPC() {}
 MPC::~MPC() {}
 
-vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs)
+vector<double> MPC::Solve(Eigen::VectorXd old_state, Eigen::VectorXd coeffs)
 {
   bool ok = true;
   typedef CPPAD_TESTVECTOR(double) Dvector;
 
-  // Deriving the values from the state
-  double x = state[0];
-  double y = state[1];
-  double psi = state[2];
-  double v = state[3];
-  double cte = state[4];
-  double epsi = state[5];
+  // Deriving the values from the old_state
+  double x = old_state[0];
+  double y = old_state[1];
+  double psi = old_state[2];
+  double v = old_state[3];
+  double cte = old_state[4];
+  double epsi = old_state[5];
 
-  // TODO: Set the number of model variables (includes both states and inputs).
-  // For example: If the state is a 4 element vector, the actuators is a 2
+  // TODO: Set the number of model variables (includes both old_states and inputs).
+  // For example: If the old_state is a 4 element vector, the actuators is a 2
   // element vector and there are 10 timesteps. The number of variables is:
   //
-  // n_vars= N * state vector size + (N-1) * 2 actuactors (steering & acceleration)
-  const int n_vars = N * state.size() + (N - 1) * 2;
-  const int n_constraints = N * state.size();
+  // n_vars= N * old_state vector size + (N-1) * 2 actuactors (steering & acceleration)
+  const int n_vars = N * old_state.size() + (N - 1) * 2;
+  const int n_constraints = N * old_state.size();
 
   // Initial value of the independent variables.
-  // SHOULD BE 0 besides initial state.
+  // SHOULD BE 0 besides initial old_state.
   Dvector vars(n_vars);
-  for (int i=0;i<n_vars;i++)
-   vars[i]=0; 
+  for (int i = 0; i < n_vars; i++)
+    vars[i] = 0;
 
-  std::cout<<vars<<std::endl;
+  std::cout << vars << std::endl;
   //*****************************************//
   // Setting lower and upper limits for vars //
   //*****************************************//
@@ -226,7 +212,7 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs)
   // Setting lower and upper limits for constraints //
   //************************************************//
 
-  // Should be 0 besides initial state.
+  // Should be 0 besides initial old_state.
   Dvector constraints_lowerbound(n_constraints);
   Dvector constraints_upperbound(n_constraints);
   for (int i = 0; i < n_constraints; i++)
@@ -302,4 +288,25 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs)
   }
 
   return resultvector;
+}
+
+// Calculate the old_state with the latency taken into account
+// Calulations are based on kinematic equations (
+// Prerequisite: Assuming no change in derivate(steering_angle and throttle) is 0 during delay time
+std::vector<double> MPC::StateWithLatency(std::vector<double> old_state, double steering_angle, double throttle)
+{
+  // Get the old state
+  double px = old_state[0];
+  double py = old_state[1];
+  double psi = old_state[2];
+  double v = old_state[3];
+
+  // Equations taken from previous lessons
+  double latency_s = latency_ms / 1000;
+  double px_pred = px + (latency_s * v * cos(psi));
+  double py_pred = py + (latency_s * v * sin(psi));
+  double psi_pred = psi - (latency_s * v * steering_angle * / Lf);
+  double v_pred = v + latency_s * throttle;
+
+  return {px_pred, py_pred, psi_pred, v_pred};
 }
