@@ -116,14 +116,14 @@ int main()
           //*******************************************//
           //              Handle latency               //
           //*******************************************//
-			std::vector<double> old_state={px,py,psi,v};
+          std::vector<double> old_state = {px, py, psi, v};
           // New state contains old values with latency taken into account
-          std::vector<double> new_state =mpc.StateWithLatency(old_state, steering_angle, throttle);
-          px=new_state[0];
-          py=new_state[1];
-          psi=new_state[2];
-          v=new_state[3];
-			
+          std::vector<double> new_state = mpc.StateWithLatency(old_state, steering_angle, throttle);
+          px = new_state[0];
+          py = new_state[1];
+          psi = new_state[2];
+          v = new_state[3];
+
           //*******************************************//
           //  Calculate throttle and steering angle    //
           //*******************************************//
